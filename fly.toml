@@ -1,0 +1,27 @@
+app = "linkbio"
+primary_region = "iad"
+kill_signal = "SIGINT"
+kill_timeout = "5s"
+
+[build]
+  dockerfile = "Dockerfile"
+
+[env]
+  APP_ENV = "production"
+  APP_DEBUG = "false"
+  DB_SSLMODE = "require"
+  ANALYTICS_RECORD = "false"
+  PROFILE_DB = "false"
+  PROFILE_DB_MIN_MS = "100"
+  REQUEST_TIMER_THRESHOLD_MS = "300"
+
+[http_service]
+  internal_port = 8080
+  force_https = true
+  auto_stop_machines = true
+  auto_start_machines = true
+  min_machines_running = 1
+  processes = ["app"]
+
+[deploy]
+  release_command = "php artisan migrate --force && php artisan config:cache && php artisan route:cache && php artisan view:cache && php artisan event:cache"
