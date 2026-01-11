@@ -1,4 +1,4 @@
-app = "linkbio"
+app = "linkbio-nd2ka"
 primary_region = "iad"
 kill_signal = "SIGINT"
 kill_timeout = "5s"
@@ -14,6 +14,10 @@ kill_timeout = "5s"
   PROFILE_DB = "false"
   PROFILE_DB_MIN_MS = "100"
   REQUEST_TIMER_THRESHOLD_MS = "300"
+  # Prefer Redis for cache/session/queue in production
+  CACHE_STORE = "redis"
+  SESSION_DRIVER = "redis"
+  QUEUE_CONNECTION = "redis"
 
 [http_service]
   internal_port = 8080
@@ -24,4 +28,5 @@ kill_timeout = "5s"
   processes = ["app"]
 
 [deploy]
+  # Run migrations and warm caches on each deploy
   release_command = "php artisan migrate --force && php artisan config:cache && php artisan route:cache && php artisan view:cache && php artisan event:cache"
