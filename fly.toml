@@ -1,34 +1,43 @@
-# flyio-force-dockerfile
-app = "linkbio-nd2ka"
-primary_region = "iad"
-kill_signal = "SIGINT"
-kill_timeout = "5s"
+# fly.toml app configuration file generated for mini-sas on 2026-01-11T22:54:00+03:00
+#
+# See https://fly.io/docs/reference/configuration/ for information about how to use this file.
+#
+
+app = 'mini-sas'
+primary_region = 'fra'
 
 [build]
-  builder = "dockerfile"
-  dockerfile = "Dockerfile.fly"
+  dockerfile = 'Dockerfile.fly'
 
 [env]
-  APP_ENV = "production"
-  APP_DEBUG = "false"
-  DB_SSLMODE = "require"
-  ANALYTICS_RECORD = "false"
-  PROFILE_DB = "false"
-  PROFILE_DB_MIN_MS = "100"
-  REQUEST_TIMER_THRESHOLD_MS = "300"
-  # Prefer Redis for cache/session/queue in production
-  CACHE_STORE = "redis"
-  SESSION_DRIVER = "redis"
-  QUEUE_CONNECTION = "redis"
+  APP_ENV = 'production'
+  APP_DEBUG = 'false'
+  DB_SSLMODE = 'require'
+  ANALYTICS_RECORD = 'false'
+  PROFILE_DB = 'false'
+  PROFILE_DB_MIN_MS = '100'
+  REQUEST_TIMER_THRESHOLD_MS = '300'
+  CACHE_STORE = 'redis'
+  SESSION_DRIVER = 'redis'
+  QUEUE_CONNECTION = 'redis'
+  SESSION_SECURE_COOKIE = 'true'
+  SESSION_SAME_SITE = 'lax'
+  SESSION_DOMAIN = 'mini-sas.fly.dev'
 
 [http_service]
   internal_port = 8080
   force_https = true
-  auto_stop_machines = true
+  auto_stop_machines = 'stop'
   auto_start_machines = true
-  min_machines_running = 1
-  processes = ["app"]
+  min_machines_running = 0
+  processes = ['app']
 
-[deploy]
-  # Run migrations and warm caches on each deploy
-  release_command = "php artisan migrate --force && php artisan config:cache && php artisan route:cache && php artisan view:cache && php artisan event:cache"
+[[mounts]]
+  source = 'storage'
+  destination = '/var/www/html/storage'
+
+[[vm]]
+  memory = '1gb'
+  cpu_kind = 'shared'
+  cpus = 1
+  memory_mb = 1024

@@ -29,11 +29,19 @@ class SecurityHeaders
         } else {
             $csp = implode('; ', [
                 "default-src 'self'",
-                "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.jsdelivr.net",
-                "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
+                // Upgrade any accidental http asset URLs
+                "upgrade-insecure-requests",
+                // Allow blob: for Vite chunks and inline runtime
+                "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.jsdelivr.net blob:",
+                "script-src-attr 'unsafe-inline'",
+                "script-src-elem 'self' https://cdn.jsdelivr.net blob:",
+                "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com blob:",
+                "style-src-attr 'unsafe-inline'",
+                "style-src-elem 'self' 'unsafe-inline' https://fonts.googleapis.com blob:",
                 "font-src 'self' https://fonts.gstatic.com",
                 "img-src 'self' data: https: blob:",
-                "connect-src 'self'",
+                // Permit HTTPS connections for assets/APIs if required
+                "connect-src 'self' https:",
                 "frame-ancestors 'none'",
                 "base-uri 'self'",
                 "form-action 'self'",

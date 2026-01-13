@@ -11,6 +11,8 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
+        // Trust Fly.io proxy so request scheme/host are detected correctly
+        $middleware->trustProxies(at: ['*']);
         // Global middleware
         $middleware->append(\App\Http\Middleware\SecurityHeaders::class);
         $middleware->append(\App\Http\Middleware\SetRlsSession::class);

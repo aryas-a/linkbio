@@ -15,8 +15,8 @@ return [
     |
     */
 
-    // Prefer Redis automatically if REDIS_URL is present, unless CACHE_STORE is explicitly set
-    'default' => env('CACHE_STORE', env('REDIS_URL') ? 'redis' : 'database'),
+    // Prefer Redis automatically if REDIS_URL is present; otherwise fall back to file
+    'default' => env('CACHE_STORE', env('REDIS_URL') ? 'redis' : 'file'),
 
     /*
     |--------------------------------------------------------------------------

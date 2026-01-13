@@ -1,39 +1,51 @@
-# Multi-stage build: Node for assets, Composer for PHP deps, final serversideup image with Nginx + PHP-FPM
-
-# 1) Build assets
+# 1) Frontend build
 FROM node:20-alpine AS node_builder
 WORKDIR /app
 COPY package*.json ./
 RUN npm ci
 COPY resources ./resources
+COPY public ./public
 COPY vite.config.* ./
 COPY tailwind.config.* ./
 COPY postcss.config.* ./
 RUN npm run build
 
-# 2) Install PHP dependencies
+# 2) PHP deps
 FROM composer:2 AS composer_builder
 WORKDIR /app
 COPY composer.json composer.lock ./
-# Copy full app to allow optimized autoloader generation
 COPY . .
-RUN composer install --no-dev --prefer-dist --no-progress --no-interaction --optimize-autoloader
+RUN composer install --no-dev --prefer-dist --no-interaction --optimize-autoloader
 
-# 3) Final runtime image with Nginx + PHP-FPM
-FROM serversideup/php:8.3-fpm-nginx
+# 3) Runtime
+FROM php:8.3-fpm-alpine
 WORKDIR /var/www/html
 
-# Copy application code and dependencies
+RUN apk add --no-cache nginx bash curl zip unzip postgresql-dev $PHPIZE_DEPS \
+    && docker-php-ext-install pdo_pgsql \
+    && pecl install redis \
+    && docker-php-ext-enable redis \
+    && rm -rf /tmp/pear
+
 COPY --from=composer_builder /app .
-# Copy Vite build artifacts
 COPY --from=node_builder /app/public/build ./public/build
 
-# Ensure necessary directories are writable
+# Place Laravel storage/cache and set safe ownership
 RUN mkdir -p storage bootstrap/cache \
     && chown -R www-data:www-data storage bootstrap/cache
 
-# Expose the default Nginx port used by the serversideup image
-EXPOSE 8080
+# Copy Nginx site config to route all requests to public/index.php
+COPY nginx.conf /etc/nginx/http.d/default.conf
 
-# Optional: Laravel optimizations at runtime are preferred (config:cache etc.)
-# Use Fly release_command to run migrations.
+# Ensure public/storage symlink exists for the "public" filesystem disk
+RUN ln -s /var/www/html/storage/app/public /var/www/html/public/storage || true
+
+# Increase PHP upload limits (OG images, profile images)
+RUN printf "post_max_size=16M\nupload_max_filesize=16M\n" > /usr/local/etc/php/conf.d/uploads.ini
+
+# Startup script to bootstrap storage on mounted volume and start services
+COPY ops/start.sh /usr/local/bin/start.sh
+RUN chmod +x /usr/local/bin/start.sh
+
+EXPOSE 8080
+CMD ["sh", "/usr/local/bin/start.sh"]

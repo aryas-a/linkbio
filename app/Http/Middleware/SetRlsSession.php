@@ -15,7 +15,7 @@ class SetRlsSession
         // In web requests, set session-local variables for RLS policies
         $user = Auth::user();
         $userId = $user?->id;
-        $role = ($user?->role === 'admin') ? 'admin' : 'user';
+        $role = ($user?->role === 'admin') ? 'admin' : ($user ? 'user' : 'anon');
 
         // Set LOCAL so it resets automatically at end of transaction/request
         // Use try/catch to avoid failing the request if not connected to Postgres
@@ -24,9 +24,9 @@ class SetRlsSession
                 DB::statement('set local app.user_id = ?', [$userId]);
                 DB::statement('set local app.role = ?', [$role]);
             } else {
-                // Reset variables for anonymous/public requests to avoid uuid casts
+                // Anonymous/public requests: clear user and set role to anon
                 DB::statement('reset app.user_id');
-                DB::statement("set local app.role = 'user'");
+                DB::statement("set local app.role = 'anon'");
             }
         } catch (\Throwable $e) {
             // Silently ignore in case of non-PgSQL connections during tests/cli

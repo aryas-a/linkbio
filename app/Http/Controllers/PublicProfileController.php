@@ -28,14 +28,20 @@ class PublicProfileController extends Controller
             abort(404);
         }
 
-        // Record view in production or when explicitly enabled for dev via ANALYTICS_RECORD=true
-        if (app()->environment('production') || (bool) env('ANALYTICS_RECORD', false)) {
-            $this->analyticsService->recordProfileView(
-                $profile,
-                $request->ip(),
-                $request->userAgent(),
-                $request->header('referer')
-            );
+        // Respect boolean-like env strings ("true", "false", "1", "0")
+        $analyticsEnabled = filter_var(env('ANALYTICS_RECORD', false), FILTER_VALIDATE_BOOLEAN);
+        // Record view only when explicitly enabled; never block the page on failure
+        if ($analyticsEnabled) {
+            try {
+                $this->analyticsService->recordProfileView(
+                    $profile,
+                    $request->ip(),
+                    $request->userAgent(),
+                    $request->header('referer')
+                );
+            } catch (\Throwable $e) {
+                report($e);
+            }
         }
 
         return view('profile.show', compact('profile'));
@@ -46,14 +52,19 @@ class PublicProfileController extends Controller
      */
     public function trackClick(Request $request, Link $link): RedirectResponse
     {
-        // Record click in production or when explicitly enabled for dev via ANALYTICS_RECORD=true
-        if (app()->environment('production') || (bool) env('ANALYTICS_RECORD', false)) {
-            $this->analyticsService->recordLinkClick(
-                $link,
-                $request->ip(),
-                $request->userAgent(),
-                $request->header('referer')
-            );
+        // Record click only when explicitly enabled; never block redirect
+        $analyticsEnabled = filter_var(env('ANALYTICS_RECORD', false), FILTER_VALIDATE_BOOLEAN);
+        if ($analyticsEnabled) {
+            try {
+                $this->analyticsService->recordLinkClick(
+                    $link,
+                    $request->ip(),
+                    $request->userAgent(),
+                    $request->header('referer')
+                );
+            } catch (\Throwable $e) {
+                report($e);
+            }
         }
 
         return redirect()->away($link->url);

@@ -7,6 +7,7 @@ use Illuminate\Support\Facades\View;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\URL;
 use App\Models\User;
 
 class AppServiceProvider extends ServiceProvider
@@ -24,6 +25,10 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        // Ensure generated URLs use HTTPS in production (behind proxies)
+        if (app()->environment('production')) {
+            URL::forceScheme('https');
+        }
         // Inject common dashboard user data to avoid N+1 in Blade
         View::composer([
             'components.layouts.dashboard',

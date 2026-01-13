@@ -73,7 +73,10 @@
                    class="w-10 h-10 rounded-full flex items-center justify-center transition-transform hover:scale-110"
                    style="background-color: {{ $social->getPlatformColor() }}20; color: {{ $social->getPlatformColor() }}"
                    title="{{ $social->getPlatformName() }}">
-                    @include('partials.social-icons.' . $social->platform, ['class' => 'w-5 h-5'])
+                    @includeFirst([
+                        'partials.social-icons.' . $social->getPlatformIcon(),
+                        'partials.social-icons.link'
+                    ], ['class' => 'w-5 h-5'])
                 </a>
                 @endforeach
             </div>
